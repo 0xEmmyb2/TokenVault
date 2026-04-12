@@ -3,6 +3,7 @@
 pragma solidity ^0.8.24;
 
 /**
+ * @author 0xEmmyb2
  * @title TokenICO
  * @dev A gas-optimized ERC20 token ICO contract for token sales
  * 
