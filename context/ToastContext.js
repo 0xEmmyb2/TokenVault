@@ -172,7 +172,7 @@ export const ToastProvider = ({ children }) => {
 export const useToast = () => {
     const context = useContext(ToastContext);
 
-    if (context == undefined) {
+    if (context === undefined) {
         throw new Error("useToast must be within a ToastProvider");
     }
 
