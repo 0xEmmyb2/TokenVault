@@ -1,4 +1,4 @@
-import React, { children, createContext, useContext } from "react";
+import React, { Children, createContext, useContext } from "react";
 import toast, { Toaster } from "react-hot-toast";
 
 const ToastContext = createContext();
