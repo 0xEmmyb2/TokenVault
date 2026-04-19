@@ -6,6 +6,22 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 
+              ___                ============
+             // \\                    ||
+            //   \\                   ||
+           //     \\                  ||
+          //=======\\                 ||    
+         //         \\                ||
+        //           \\               ||
+
+/**
+ * @author 0xEmmyb2
+ * @title AGRITOKEN
+ * @dev A token-creation contract for the dApp
+ * 
+ */        
+
+
 contract AGRITOKEN is ERC20, Ownable {
     uint256 private constant INITIAL_SUPPLY = 10000000000;
 
