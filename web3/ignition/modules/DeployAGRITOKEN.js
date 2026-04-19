@@ -4,7 +4,7 @@ async function main() {
   const [deployer] = await hre.ethers.getSigners();
 
   console.log("Deploying contracts with the account:", deployer.address);
-  console.log("Account balance:", (await deployer.getBalance()).toString());
+  console.log("Account balance:", (await provider.getBalance()).toString());
 
   const network = await hre.ethers.provider.getNetwork();
   console.log("Network:", network.name);
@@ -14,11 +14,11 @@ async function main() {
   const AGRITOKEN = await hre.ethers.getContractFactory("AGRITOKEN");
   const agriToken = await AGRITOKEN.deploy();
 
-  await agriToken.deployed();
+  await agriToken.waitForDeployment();
 
   console.log("\nDeployment Successfull!");
   console.log("-------------------------");
-  console.log("\nNEXT_PUBLIC_AGRITOKEN_ADDRESS:", agriToken.address);
+  console.log("\nNEXT_PUBLIC_AGRITOKEN_ADDRESS:", agriToken.getAddress);
   console.log("\nNEXT_PUBLIC_OWNER_ADDRESS:", deployer.address);
 }
 
