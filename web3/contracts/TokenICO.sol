@@ -2,6 +2,9 @@
 
 pragma solidity ^0.8.24;
 
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+
+
 /**
  * @author 0xEmmyb2
  * @title TokenICO
@@ -28,7 +31,7 @@ interface IERC20 {
     function decimals() external view returns(uint8);
 }
 
-contract TokenICO {
+contract TokenICO is ReentrancyGuard{
     //STATE Variables
     address public immutable i_owner;
     address public saleToken;
@@ -41,6 +44,7 @@ contract TokenICO {
     event SaleTokenSet(address indexed token);
 
     //CUSTOM ERRORS 
+    error InsufficientLiquidity();
     error NotOwner();
     error InvalidPrice();
     error InvalidAddress();
@@ -92,7 +96,7 @@ contract TokenICO {
 
 
     //USER Functions
-    function buyToken() external payable{
+    function buyToken() external payable nonReentrant{
         if (msg.value == 0) revert NoEthSent();
 
         address token = saleToken;
@@ -102,6 +106,8 @@ contract TokenICO {
         IERC20 tokenContract = IERC20(token);
         uint8 decimals = tokenContract.decimals();
         uint256 tokenAmount = (msg.value * (10**decimals)) / ethPriceForToken;
+        
+        if (tokenContract.balanceOf(address(this)) < tokenAmount) revert InsufficientLiquidity(); 
 
         //Process Token Purchase
         unchecked {
@@ -140,6 +146,7 @@ contract TokenICO {
     ){
         address token = saleToken;
         IERC20 tokenContract = IERC20(token);
+        if (token == address(0)) revert SaleTokenNotSet();
 
         return (
             token,
