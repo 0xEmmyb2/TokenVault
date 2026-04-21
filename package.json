@@ -12,6 +12,7 @@
     "@rainbow-me/rainbowkit": "^2.2.10",
     "@tanstack/react-query": "^5.96.2",
     "alchemy-sdk": "^3.6.5",
+    "dotenv": "^17.4.2",
     "ethers": "^6.16.0",
     "hardhat": "^3.4.0",
     "ipfs-http-client": "^60.0.1",
