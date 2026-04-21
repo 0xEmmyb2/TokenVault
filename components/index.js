@@ -1,6 +1,17 @@
 import React, { useState, useEffect } from "react";
 import Head from "next/head";
-import { Header } from "../components/HomePage/Header";
+import Header from "../components/HomePage/Header";
+import HeroSection from "../components/HomePage/HeroSection";
+import HeroCTAComponent from "../components/HomePage/HeroCTAComponent";
+import DecentralizedPlatform from "../components/HomePage/DecentralizedPlatform";
+import BlockchainFeatures from "../components/HomePage/BlockchainFeatures";
+import VideoCardSlider from "../components/HomePage/VideoCardSlider";
+import TokenomicsComponent from "../components/HomePage/TokenomicsComponent";
+import RoadmapComponent from "../components/HomePage/RoadmapComponent";
+import BrandSlider from "../components/HomePage/BrandSlider";
+import TestimonialSlider from "../components/HomePage/TestimonialSlider";
+import FAQComponent from "../components/HomePage/FAQComponent";
+import FooterComponent from "../components/HomePage/FooterComponent";
 
 const TOKEN_NAME = process.env.NEXT_PUBLIC_TOKEN_NAME;
 
@@ -13,17 +24,8 @@ export default function Home() {
     try {
       const saveMode = localStorage.getItem("darkMode");
 
-      let systemPrefersDark = false;
-
-      try {
-        systemPrefersDark = window.matchMedia(
-          "(prefers-color-scheme: dark)",
-        ).matches;
-      } catch (e) {
-        systemPrefersDark = false;
-      }
-
-      const shouldUseDarkMode = saveMode === "false" ? false : true;
+      const shouldUseDarkMode =
+        saveMode === null ? true : saveMode === "true";
 
       setIsDarkMode(shouldUseDarkMode);
 
@@ -37,7 +39,7 @@ export default function Home() {
       setIsDarkMode(true);
       document.documentElement.classList.add("dark");
     }
-  });
+  }, []);
 
   const toggleDarkMode = () => {
     const newMode = !isDarkMode;
@@ -70,11 +72,21 @@ export default function Home() {
         <meta name="description" content="AGRITOKEN dApp" />
         <link rel="icon" href="./logo.png" />
       </Head>
-      <Header isDarkMode={isDarkMode} toggle={toggleDarkMode} />
+      <Header isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
 
       <main>
         <HeroSection isDarkMode={isDarkMode} />
+        <HeroCTAComponent isDarkMode={isDarkMode} />
+        <DecentralizedPlatform isDarkMode={isDarkMode} />
+        <BlockchainFeatures isDarkMode={isDarkMode} />
+        <VideoCardSlider isDarkMode={isDarkMode} />
+        <TokenomicsComponent isDarkMode={isDarkMode} />
+        <RoadmapComponent isDarkMode={isDarkMode} />
+        <BrandSlider isDarkMode={isDarkMode} />
+        <TestimonialSlider isDarkMode={isDarkMode} />
+        <FAQComponent isDarkMode={isDarkMode} />
       </main>
+      <FooterComponent isDarkMode={isDarkMode} />
     </div>
   );
 }
