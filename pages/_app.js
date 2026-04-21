@@ -1,4 +1,4 @@
-import "..styles/globals.css"; 
+import "../styles/globals.css"; 
 import { config } from "../provider/wagmiConfig";
 
 import {RainbowKitProvider, darkTheme} from "@rainbow-me/rainbowkit";
@@ -32,3 +32,5 @@ function MyApp({Component, pageProps}) {
         </WagmiProvider>
     );
 }
+
+export default MyApp;

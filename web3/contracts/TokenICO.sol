@@ -33,15 +33,15 @@ contract TokenICO {
     address public immutable i_owner;
     address public saleToken;
     uint256 public ethPriceForToken = 0.001 ether;
-    address public tokensSold;
+    uint256 public tokensSold;
 
     //EVENTS
-    event TokenPurchased(address indexed buyer, uint256 amount, uint256 tokensBought);
+    event TokensPurchased(address indexed buyer, uint256 amount, uint256 tokensBought);
     event PriceUpdated(uint256 oldPrice, uint256 newPrice);
     event SaleTokenSet(address indexed token);
 
     //CUSTOM ERRORS 
-    error OnlyOwner();
+    error NotOwner();
     error InvalidPrice();
     error InvalidAddress();
     error NoEthSent();
@@ -54,7 +54,7 @@ contract TokenICO {
     error UseTokenFunction();
 
     modifier OnlyOwner {  
-        if (msg.sender != i_owner) revert onlyOwner();
+        if (msg.sender != i_owner) revert NotOwner();
         _; 
     }
 
@@ -75,19 +75,19 @@ contract TokenICO {
         emit PriceUpdated(oldPrice, newPrice);
     }
 
-    function setSaleToken(address _token) external onlyOwner{
+    function setSaleToken(address _token) external OnlyOwner{
         if (_token == address(0)) revert InvalidAddress();
         saleToken = _token;
         emit SaleTokenSet(_token);
     }
 
-    function withdrawAllTokens() external onlyOwner{
+    function withdrawAllTokens() external OnlyOwner{
         address token = saleToken;
         uint256 balance = IERC20(token).balanceOf(address(this));
 
         if (balance == 0) revert NoTokensToWithdraw();
 
-        if (!IERC20(token).transfer(owner, balance)) revert TokensTransferFailed();
+        if (!IERC20(token).transfer(i_owner, balance)) revert TokenTransferFailed();
     }
 
 
@@ -119,7 +119,7 @@ contract TokenICO {
     }
 
     function rescueTokens(address tokenAddress) external OnlyOwner{
-        if (!tokenAddress == saleToken) revert CannotRescueSaleToken();
+        if (tokenAddress == saleToken) revert CannotRescueSaleToken();
 
         IERC20 tokenContract = IERC20(tokenAddress);
         uint256 balance = tokenContract.balanceOf(address(this));

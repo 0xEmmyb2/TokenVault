@@ -4,7 +4,7 @@ async function main() {
   const [deployer] = await hre.ethers.getSigners();
 
   console.log("Deploying contracts with the account:", deployer.address);
-  console.log("Account balance:", (await provider.getBalance()).toString());
+  console.log("Account balance:", (await hre.ethers.provider.getBalance()).toString());
 
   const network = await hre.ethers.provider.getNetwork();
   console.log("Network:", network.name);

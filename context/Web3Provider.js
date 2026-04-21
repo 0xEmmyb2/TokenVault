@@ -4,7 +4,7 @@ import { useAccount, useChainId, useConnect, useBalance } from "wagmi";
 
 import { useToast } from "./ToastContext";
 import TOKEN_ICO_ABI from "./ABI.json";
-import { useEthersProvider, useEthersSigner } from "../provider/hooks";
+import { useEthersProviders, useEthersSigner } from "../provider/hooks";
 import { config } from "../provider/wagmiConfig";
 import { handleTransactionError, ERC20_ABI, generateId } from "./Utility";
 
@@ -22,7 +22,7 @@ const Web3Context = createContext();
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_TOKEN_ICO_ADDRESS;
 const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL;
 
-const fallbackProvider = new ethers.providers.JsonRpcProvider(RPC_URL);
+const fallbackProvider = new ethers.JsonRpcProvider(RPC_URL);
 
 export const Web3Provider = ({ children }) => {
   const { notify } = useToast;
@@ -98,12 +98,12 @@ export const Web3Provider = ({ children }) => {
 
         setContractInfo({
           tbcAddress: info.tokenAddress,
-          tbcBalance: ethers.utils.formatUnits(
+          tbcBalance: ethers.formatUnits(
             info.tokenBalance,
             tokenDecimals,
           ),
-          ethPrice: ethers.utils.formatUnits(info.ethPrice, 18),
-          totalSold: ethers.utils.formatUnits(info.totalSold, tokenDecimals),
+          ethPrice: ethers.formatUnits(info.ethPrice, 18),
+          totalSold: ethers.formatUnits(info.totalSold, tokenDecimals),
         });
 
         if (address && info.tokenAddress) {
@@ -127,15 +127,15 @@ export const Web3Provider = ({ children }) => {
 
           setTokenBalance({
             ...prev,
-            userTbcBalance: ethers.utils.formatUnits(
+            userTbcBalance: ethers.formatUnits(
               userTokenBalance,
               tokenDecimals,
             ),
-            contractEthBalance: ethers.utils.formatUnits(contractEthBalance),
-            totalSupply: ethers.utils.formatUnits(totalSupply, tokenDecimals),
-            userEthBalance: ethers.utils.formatUnits(userEthBalance),
-            ethPrice: ethers.utils.formatUnits(info.ethPrice, 18),
-            tbcBalance: ethers.utils.formatUnits(
+            contractEthBalance: ethers.formatUnits(contractEthBalance),
+            totalSupply: ethers.formatUnits(totalSupply, tokenDecimals),
+            userEthBalance: ethers.formatUnits(userEthBalance),
+            ethPrice: ethers.formatUnits(info.ethPrice, 18),
+            tbcBalance: ethers.formatUnits(
               info.tokenBalance,
               tokenDecimals,
             ),
@@ -158,7 +158,7 @@ export const Web3Provider = ({ children }) => {
     const toastId = notify.start(`Buying ${TOKEN_SYMBOL} with ${CURRENCY}...`);
 
     try {
-      const ethValue = ethers.utils.parseEther(ethAmount);
+      const ethValue = ethers.parseEther(ethAmount);
 
       const tx = await contract.buyToken({
         value: ethValue,
@@ -236,7 +236,7 @@ export const Web3Provider = ({ children }) => {
     const toastId = notify.start(`Updating token price...`);
 
     try {
-      const parsedPrice = ethers.utils.parseEther(newPrice);
+      const parsedPrice = ethers.parseEther(newPrice);
 
       const tx = await contract.updateTokenPrice(parsedPrice);
 
@@ -391,7 +391,7 @@ export const Web3Provider = ({ children }) => {
 
   const formatTokenAmount = (amount, decimals = 18) => {
     if (!amount) return "0";
-    return ethers.utils.formatUnits(amount, decimals);
+    return ethers.formatUnits(amount, decimals);
   };
 
   const isOwner = async () => {
