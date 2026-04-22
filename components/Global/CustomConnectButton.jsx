@@ -1,97 +1,100 @@
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import Icons from "./SVG"; 
+import { RiWallet3Line } from "react-icons/ri";
 
-const baseButtonClass =
-  "h-9 px-3 sm:px-4 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 inline-flex items-center justify-center gap-1.5 backdrop-blur-sm";
-
-const CustomConnectButton = () => {
+const CustomConnectButton = ({ active, childStyle }) => {
   return (
     <ConnectButton.Custom>
       {({
         account,
         chain,
-        mounted,
         openAccountModal,
         openChainModal,
         openConnectModal,
-        authenticationStatus,
+        mounted,
       }) => {
-        const ready = mounted && authenticationStatus !== "loading";
-        const connected =
-          ready &&
-          account &&
-          chain &&
-          (!authenticationStatus || authenticationStatus === "authenticated");
+        const ready = mounted;
+        const connected = ready && account && chain;
 
-        // 1. DISCONNECTED
-        if (!connected) {
-          return (
-            <button
-              type="button"
-              onClick={openConnectModal}
-              className={`${baseButtonClass} bg-gradient-to-r from-green-600 to-emerald-500 text-white hover:shadow-lg hover:shadow-green-500/20 active:scale-95`}
-            >
-              <Icons.WalletIcon size={16} />
-              Connect Wallet
-            </button>
-          );
-        }
-
-        // 2. WRONG NETWORK
-        if (chain.unsupported) {
-          return (
-            <button
-              type="button"
-              onClick={openChainModal}
-              className={`${baseButtonClass} bg-red-600 text-white hover:bg-red-500 shadow-lg shadow-red-500/20`}
-            >
-              <Icons.ErrorXMark size={16} />
-              Wrong Network
-            </button>
-          );
-        }
-
-        // 3. CONNECTED
         return (
-          <div className="flex items-center gap-2">
-            {/* Chain Switcher */}
-            <button
-              type="button"
-              onClick={openChainModal}
-              className={`${baseButtonClass} bg-gray-900/85 text-gray-200 border border-green-900/40 hover:bg-gray-800`}
-            >
-              {chain.hasIcon ? (
-                <span className="w-4 h-4 rounded-full overflow-hidden shrink-0">
-                  {chain.iconUrl ? (
-                    <img
-                      alt={chain.name ?? "Chain icon"}
-                      src={chain.iconUrl}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <Icons.NetworkIcon size={14} />
-                  )}
-                </span>
-              ) : (
-                <Icons.NetworkIcon size={14} />
-              )}
-              <span className="hidden sm:inline">{chain.name}</span>
-              <Icons.ArrowDownIcon size={12} className="opacity-60" />
-            </button>
+          <div
+            {...(!ready && {
+              "aria-hidden": true,
+              style: {
+                opacity: 0,
+                pointerEvents: "none",
+                userSelect: "none",
+              },
+            })}
+          >
+            {() => {
+              if (!connected) {
+                return (
+                  <button
+                    onClick={openConnectModal}
+                    className={`flex items-center 
+                    bg-gradient-to-r from-fuchsia-500
+                    to-purple-600 hover:from-fuchsia-600
+                    hover:to-purple-700 text-white px-4 
+                    py-2 rounded-md transition-colors ${childStyle}`}
+                  >
+                    <RiWallet3Line className="mr-2" size={20} />
+                    Connect Wallet
+                  </button>
+                );
+              }
 
-            {/* Account Info */}
-            <button
-              type="button"
-              onClick={openAccountModal}
-              className={`${baseButtonClass} bg-gradient-to-r from-green-600 to-emerald-500 text-white hover:from-green-500 hover:to-emerald-400`}
-            >
-              <span className="max-w-[110px] truncate">{account.displayName}</span>
-              {account.displayBalance && (
-                <span className="hidden md:inline text-white/80 border-l border-white/20 pl-2 ml-1">
-                  {account.displayBalance}
-                </span>
-              )}
-            </button>
+              if (chain.unsupported) {
+                return (
+                  <button
+                    onClick={openChainModal}
+                    className="bg-red-500 hover:bg-red-600
+                  text-white px-6 py-2 rounded-lg"
+                  >
+                    Wrong Network
+                  </button>
+                );
+              }
+              return (
+                <div className="flex items-center gap-4">
+                  {active && (
+                    <button
+                      onClick={openChainModal}
+                      className="bg-gradient-to-r
+                    from-fuchsia-500 to-purple-600
+                    hover:from-fuchsia-600
+                    hover:to-purple-700 text-white px-4
+                    py-2 rounded-lg flex items-center
+                    gap-2"
+                    >
+                      {chain.hasIcon && (
+                        <div className="w-5 h-5">
+                          {chain.iconUrl && (
+                            <img
+                              alt={chain.name ?? "Chain icon"}
+                              src={chain.iconUrl}
+                              className="w-5 h-5"
+                            />
+                          )}
+                        </div>
+                      )}
+                      {/* {chain.name} */}
+                    </button>
+                  )}
+                  <button
+                    onClick={openAccountModal}
+                    className="bg-gradient-to-r
+                  from-fuchsia-500 to-purple-600
+                  hover:from-fuchsia-600
+                  hover:to-purple-700 text-white px-4
+                  py-2 rounded-lg flex items-center
+                  gap-2"
+                  >
+                    {account.displayName}
+                    {account.displayBalance && ` (${account.displayBalance})`}
+                  </button>
+                </div>
+              );
+            }}
           </div>
         );
       }}
