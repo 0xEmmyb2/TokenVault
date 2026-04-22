@@ -568,7 +568,7 @@ const Header = ({ isDarkMode, toggleDarkMode }) => {
 
             {/* Connect wallet — hidden on small mobile */}
             <div className="hidden sm:block">
-              <CustomConnectButton />
+              <CustomConnectButton active={true} />
             </div>
 
             {/* Mobile hamburger */}
