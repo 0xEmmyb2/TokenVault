@@ -1,183 +1,520 @@
-import Link from "next/link";
-import { FiArrowRight, FiBarChart2, FiShield, FiGlobe } from "react-icons/fi";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { FaEthereum } from "react-icons/fa";
+import { SiTether } from "react-icons/si";
+import { IoWalletOutline } from "react-icons/io5";
+import { AiOutlineQuestionCircle } from "react-icons/ai";
+import { BsFillInfoCircleFill, BsCurrencyDollar } from "react-icons/bs";
+import { RiUsdCircleFill } from "react-icons/ri";
+import { CustomConnectButton } from "../index";
+import { useWeb3 } from "../../context/Web3Provider";
+import { ethers } from "ethers";
 
-const TOKEN_NAME = process.env.NEXT_PUBLIC_TOKEN_NAME || "AgriToken";
-const TOKEN_SYMBOL = process.env.NEXT_PUBLIC_TOKEN_SYMBOL || "AGRI";
-const TOKEN_SUPPLY = process.env.NEXT_PUBLIC_TOKEN_SUPPLY || "1,000,000,000";
-const TOKEN_PRICE = process.env.NEXT_PUBLIC_PER_TOKEN_USD_PRICE || "0.0035";
-const BLOCKCHAIN = process.env.NEXT_PUBLIC_BLOCKCHAIN || "Blockchain";
+const TOKEN_NAME = process.env.NEXT_PUBLIC_TOKEN_NAME;
+const TOKEN_SYMBOL = process.env.NEXT_PUBLIC_TOKEN_SYMBOL;
+const TOKEN_SUPPLY = process.env.NEXT_PUBLIC_TOKEN_SUPPLY;
+const PER_TOKEN_USD_PRICE = process.env.NEXT_PUBLIC_PER_TOKEN_USD_PRICE;
+const NEXT_PER_TOKEN_USD_PRICE =
+  process.env.NEXT_PUBLIC_NEXT_PER_TOKEN_USD_PRICE;
+const CURRENCY = process.env.NEXT_PUBLIC_CURRENCY;
+const BLOCKCHAIN = process.env.NEXT_PUBLIC_BLOCKCHAIN;
 
-const metrics = [
-  { label: "Token", value: TOKEN_SYMBOL },
-  { label: "Network", value: BLOCKCHAIN },
-  { label: "Supply", value: TOKEN_SUPPLY },
-  { label: "Current Price", value: `$${TOKEN_PRICE}` },
-];
+const HeroSection = ({ isDarkMode, setIsReferralPopupOpen }) => {
+  const {
+    account,
+    isConnected,
+    contractInfo,
+    tokenBalances,
+    buyToken,
+    addTokenToMetaMask,
+  } = useWeb3();
 
-const highlights = [
-  {
-    title: "Transparent Infrastructure",
-    description: "On-chain visibility for better trust and accountability.",
-    icon: FiGlobe,
-  },
-  {
-    title: "Security Focused",
-    description: "Smart-contract based operations with resilient design.",
-    icon: FiShield,
-  },
-  {
-    title: "Growth Ready",
-    description: "Scalable architecture built for long-term ecosystem expansion.",
-    icon: FiBarChart2,
-  },
-];
+  const [selectedToken, setSelectedToken] = useState("POL");
+  const [inputAmount, setInputAmount] = useState("0");
+  const [tokenAmount, setTokenAmount] = useState("0");
+  const [hasSufficientBalance, setHasSufficientBalance] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasAttemptedRegistration, setHasAttemptedRegistration] =
+    useState(false);
 
-const HeroSection = ({ isDarkMode = true }) => {
+  const canvasRef = useRef(null);
+  const particlesRef = useRef([]);
+  const animationRef = useRef(null);
+
+  //Calculate progress percentage based on sold tokens vs total supply
+  const calculateProgressPercentage = () => {
+    //Check for required data
+    if (!contractInfo?.totalSold || !contractInfo?.tbcBalance) {
+      return 0;
+    }
+
+    //Conversion of string values to numbers
+    const totalSold = parseFloat(contractInfo.totalSold);
+    const tbcBalance = parseFloat(contractInfo.tbcBalance);
+
+    //Calculate total supply (sold + available balance)
+    const totalSupply = totalSold + tbcBalance;
+    const percentage = (totalSold / totalSupply) * 100;
+
+    return isNaN(percentage)
+      ? 0
+      : Math.min(parseFloat(percentage.toFixed(2)), 100);
+  };
+
+  //Price calculations to avoid recalculations
+  const prices = useMemo(() => {
+    const defaultEthPrice = contractInfo?.ethPrice;
+    let ethPrice;
+
+    try {
+      if (contractInfo?.ethPrice) {
+        if (
+          typeof contractInfo.ethPrice === "object" &&
+          contractInfo.ethPrice._isBigNumber
+        ) {
+          ethPrice = contractInfo.ethPrice;
+        } else {
+          ethPrice = ethers.parseEther(contractInfo.ethPrice.toString());
+        }
+      } else {
+        ethPrice = ethers.parseEther(defaultEthPrice);
+      }
+    } catch (error) {
+      console.error("Error parsing prices:", error);
+      ethPrice = ethers.parseEther(defaultEthPrice);
+    }
+
+    return { ethPrice };
+  }, [contractInfo]);
+
+  //Loading as components mount
+  useEffect(() => {
+    setIsLoading(true);
+
+    //Timeout to hide the loader after 3 seconds
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  //Enough balance
+  useEffect(() => {
+    if (!isConnected || !tokenBalances) {
+      setHasSufficientBalance(false);
+      return;
+    }
+
+    //Threshold
+    const lowTokenSupply = parseFloat(tokenBalances?.tbcBalance || "0") < 20;
+
+    if (lowTokenSupply) {
+      setHasSufficientBalance(false);
+      return;
+    }
+
+    const inputAmountFloat = parseFloat(inputAmount) || 0;
+    let hasBalance = false;
+
+    switch (selectedToken) {
+      case "POL":
+        const ethBalance = parseFloat(tokenBalances?.userEthBalance || "0");
+        hasBalance = ethBalance >= inputAmountFloat && inputAmountFloat > 0;
+        break;
+
+      default:
+        hasBalance = false;
+    }
+
+    setHasSufficientBalance(hasBalance);
+  }, [isConnected, inputAmount, selectedToken, tokenBalances]);
+
+  //Token amount based on input amount and selected token
+  const calculateTokenAmount = (amount, token) => {
+    if (isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) return "0";
+
+    let calculatedAmount;
+    try {
+      switch (token) {
+        case "POL":
+          //ETH Value to Tokens
+          const amountInWei = ethers.parseEther(amount);
+          const tokensPerEth = ethers.formatEther(prices.ethPrice);
+          calculatedAmount = parseFloat(amount) / parseFloat(tokensPerEth);
+          break;
+        default:
+          calculatedAmount = 0;
+      }
+    } catch (error) {
+      console.error("Error calculating token amount:", error);
+      calculatedAmount = 0;
+    }
+
+    return calculatedAmount.toFixed(2);
+  };
+
+  //Input amount changes
+  const handleAmountChange = (value) => {
+    setInputAmount(value);
+    setTokenAmount(calculateTokenAmount(value, selectedToken));
+  };
+
+  //Token selection change
+  const handleTokenSelection = (token) => {
+    setSelectedToken(token);
+    setTokenAmount(calculateTokenAmount(inputAmount, token));
+  };
+
+  //Execute Purchase
+  const executePurchase = async () => {
+    if (!isConnected) {
+      alert("Please connect your wallet first!");
+      return;
+    }
+
+    if (parseFloat(inputAmount) <= 0) {
+      alert("Amount must be greater than 0");
+      return;
+    }
+
+    if (!hasSufficientBalance) {
+      if (parseFloat(tokenBalances?.fsxBalance || "0") < 20) {
+        alert("Insufficient token supply. Please try again later.");
+      } else {
+        alert(`Insufficient ${selectedToken} balance`);
+      }
+      return;
+    }
+
+    try {
+      let tx;
+      console.log(`Buying with ${inputAmount} ${selectedToken}`);
+
+      switch (selectedToken) {
+        case "POL":
+          tx = await buyToken(inputAmount);
+          break;
+        default:
+          alert("Please select a token to purchase with");
+          return;
+      }
+
+      console.log(tx);
+      console.log(
+        `Successfully purchased ${tokenAmount} ${TOKEN_SYMBOL} tokens!`,
+      );
+
+      //Reset input fields
+      setInputAmount("0");
+      setTokenAmounts("0");
+    } catch (error) {
+      console.error(`Error buying ${selectedToken}:`, error);
+      alert("Transaction failed.Please try again!");
+    }
+  };
+
+  //Get current balance
+  const getCurrentBalance = () => {
+    if (!tokenBalance) return "0";
+
+    switch (selectedToken) {
+      case "POL":
+        return tokenBalances?.userEthBalance || 0;
+        break;
+      default:
+        return "0";
+    }
+  };
+
+  //Button state determination
+  const getButtonMessage = () => {
+    if (inputAmount === "0" || inputAmount === "") {
+      return "ENTER AMOUNT";
+    }
+    if (parseFloat(tokenBalances?.tbcBalance || "0") < 20) {
+      return "INSUFFICIENT TOKEN SUPPLY";
+    }
+
+    return hasSufficientBalance
+      ? `BUY ${TOKEN_SYMBOL}`
+      : `INSUFFICIENT ${selectedToken} BALANCE`;
+  };
+
+  //Get token icon
+  const getTokenIcon = (token) => {
+    switch (token) {
+      case "POL":
+        return <img scrc="./polygon.svg" className="w-5 h-5" alt="polygon" />;
+        break;
+      default:
+        return null;
+    }
+  };
+
+  //Theme variables
+  const bgColor = isDarkMode ? "bg-[#0E0B12]" : "bg-[#F5F7FA]";
+  const textColor = isDarkMode ? "text-white" : "text-gray-800";
+  const secondaryTextColor = isDarkMode ? "text-gray-400" : "text-gray-600";
+  const cardBg = isDarkMode ? "bg-[#13101A]" : "bg-white/95";
+  const cardBorder = isDarkMode ? "border-gray-800/30" : "border-gray-100";
+  const inputBg = isDarkMode
+    ? "bg-gray-900/60 border-gray-800/50"
+    : "bg-gray-100 border-gray-200/70";
+  const primaryGradient = "from-fuchsia-500 to-purple-600";
+  const primaryGradientHover = "from-fuchisa-600 to-purple-700";
+  const accentColor = "text-[#7765F3]";
+
+  //Token Button Styling
+
+  //Update buttons
+  const getTokenButtonStyle = (token) => {
+    const isSelected = selectedToken === token;
+    const baseClasses =
+      "flex-1 flex items-center justify-center rounded-lg py-2.5 transition-all duration-300";
+
+    if (isSelected) {
+      let selectedColorClass;
+      switch (token) {
+        case "POL":
+          selectedColorClass =
+            "bg-gradient-to-r from-fuchsia-500 to-purple-600 hover:from-fuchsia-600 hover:to-purple-700 text-white";
+          break;
+        default:
+          selectedColorClass = "";
+      }
+      return `${baseClasses} ${selectedColorClass} text-white shadow-lg`;
+    }
+    return `${baseClasses} ${isDarkMode ? "bg-gray-800/40 hover:bg-gray-800/60 text-gray-300" : "bg-gray-200 hover:bg-gray-300 text-gray-700"}`;
+  };
+
+  //Particle animation effect
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    const particleCount = 70;
+    const baseColor = { r: 189, g: 38, b: 211 };
+
+    //Full width
+    const resizeCanvas = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = canvas.parentElement.offsetHeight;
+    };
+
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+
+    //Mouse Interactions
+    let mouseX = 0;
+    let mouseY = 0;
+    const handleMouseMove = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      mouseX = e.clientX - rect.left;
+      mouseY = e.clientY - rect.top;
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+
+    //Perspective settings
+    const perspective = 400;
+    const focalLength = 300;
+
+    //3D Particles
+    particlesRef.current = Array(particleCount)
+      .fill()
+      .map(() => ({
+        x: Math.random() * canvas.width - canvas.width / 2,
+        y: Math.random() * canvas.height - canvas.height / 2,
+        z: Math.random() * 1000,
+        size: Math.random() * 4 + 2,
+        baseSize: Math.random() * 4 + 2,
+        speedX: Math.random() * 0.5 - 0.25,
+        speedY: Math.random() * 0.5 - 0.25,
+        speedZ: Math.random() * 2 + 1,
+        opacity: Math.random() * 0.5 + 0.3,
+      }));
+
+    //3D Animation
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      //Depth rendering
+      const sortedParticles = [...particlesRef.current].sort(
+        (a, b) => a.z - b.z,
+      );
+
+      //Updating and drawing particles
+      sortedParticles.forEach((particle) => {
+        //Mouse influence
+        const mouseInfluenceX =
+          (mouseX - canvas.width / 2 - particle.x) * 0.0001;
+        const mouseInfluenceY =
+          (mouseY - canvas.height / 2 - particle.y) * 0.0001;
+
+        //Update position
+        particle.x += particle.speedX + mouseInfluenceX;
+        particle.y += particle.speedY + mouseInfluenceY;
+        particle.z += particle.speedZ;
+
+        if (particle.z < -focalLength) {
+          particle.z = Math.random() * 1000;
+          particle.x = Math.random() * canvas.width - canvas.width / 2;
+          particle.y = Math.random() * canvas.height - canvas.height / 2;
+        }
+
+        //3D projection
+        const scale = focalLength / (focalLength + particle.z);
+        const x2d = particle.x * scale + canvas.width / 2;
+        const y2d = particle.y * scale + canvas.height / 2;
+        const scaledSize = particle.baseSize * scale;
+
+        //Depth color
+        const distance = 1 - Math.min(particle.z / 1000, 1);
+        const opacity = particle.opacity * distance;
+
+        //Color variation
+        const colorVariation = Math.max(0.6, distance);
+        const r = Math.floor(baseColor.r * colorVariation);
+        const g = Math.floor(baseColor.g * colorVariation);
+        const b = Math.floor(baseColor.b * colorVariation);
+
+        //Draw particles
+        ctx.beginPath();
+        ctx.arc(x2d, y2d, scaledSize, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${opacity})`;
+        ctx.fill();
+
+        //Glow Effect
+        if (distance > 0.8) {
+          ctx.beginPath();
+          ctx.arc(x2d, y2d, scaledSize * 1.5, 0, Math.PI * 2);
+        }
+      });
+
+      animationRef.current = requestAnimationFrame(animate);
+    };
+    animate();
+
+    //Cleanup
+    return () => {
+      cancelAnimationFrame(animationRef.current);
+      window.removeEventListener("resize", resizeCanvas);
+      window.removeEventListener("mousemove", handleMouseMove);
+    };
+  }, [isDarkMode]);
+
   return (
-    <section className="px-4 sm:px-6 lg:px-8 pt-8 pb-16 sm:pt-10 sm:pb-20">
-      <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-8 lg:gap-10 items-stretch">
+    <div className={`relative mt-12 w-full overflow-hidden ${bgColor}`}>
+      {/* Background with glowing animation pattern */}
+      <div className="absolute inset-0 z-0">
+        {/* Gradient overlay */}
         <div
-          className={`rounded-2xl border p-6 sm:p-8 lg:p-10 ${
+          className={`absolute inset-0 ${
             isDarkMode
-              ? "bg-gray-950 border-green-900/50"
-              : "bg-white border-green-200/70 shadow-[0_16px_40px_rgba(0,100,0,0.08)]"
+              ? "bg-gradient-to-b from-[#0E0B12] via-transparent to-[#0E0B12]/80"
+              : "bg-gradient-to-b from-[#f3f3f7]/80 via-transparent to-[#f3f3f7]"
           }`}
-        >
-          <p
-            className={`text-xs sm:text-sm font-semibold uppercase tracking-[0.14em] ${
-              isDarkMode ? "text-green-400" : "text-green-700"
-            }`}
-          >
-            TokenVault
-          </p>
-          <h1
-            className={`mt-3 text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight ${
-              isDarkMode ? "text-white" : "text-gray-900"
-            }`}
-          >
-            {TOKEN_NAME}: powering the next generation of decentralized agriculture.
-          </h1>
-          <p
-            className={`mt-5 text-sm sm:text-base leading-relaxed max-w-2xl ${
-              isDarkMode ? "text-gray-300" : "text-gray-600"
-            }`}
-          >
-            Access a clear and modern blockchain experience for agriculture-focused
-            participation, ecosystem growth, and transparent token utility.
-          </p>
+        ></div>
+        <canvas
+          ref={canvasRef}
+          className="absolute top-0 left-0 w-full h-full pointer-events-none z-10"
+          style={{ zIndex: 1 }}
+        />
+        {/* Animated glowing grid pattern */}
+        <div className="absolute inset-0 grid-pattern"></div>
 
-          <div className="mt-7 flex flex-wrap items-center gap-3">
-            <Link
-              href="/presale"
-              className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-green-600 to-emerald-500 px-5 py-2.5 text-sm font-semibold text-white transition-all duration-200 hover:from-green-500 hover:to-emerald-400"
-            >
-              Join Presale
-              <FiArrowRight />
-            </Link>
-            <Link
-              href="/dashboard"
-              className={`inline-flex items-center rounded-lg px-5 py-2.5 text-sm font-semibold transition-colors duration-200 ${
-                isDarkMode
-                  ? "text-green-300 hover:text-green-200"
-                  : "text-green-700 hover:text-green-800"
-              }`}
-            >
-              Open Dashboard
-            </Link>
-          </div>
-
-          <div className="mt-8 grid grid-cols-2 gap-3 sm:gap-4">
-            {metrics.map((metric) => (
-              <div
-                key={metric.label}
-                className={`rounded-xl border px-4 py-3 ${
-                  isDarkMode
-                    ? "bg-gray-900/60 border-green-900/40"
-                    : "bg-green-50/60 border-green-200/70"
-                }`}
-              >
-                <p
-                  className={`text-[11px] uppercase tracking-[0.12em] ${
-                    isDarkMode ? "text-gray-400" : "text-gray-500"
-                  }`}
-                >
-                  {metric.label}
-                </p>
-                <p
-                  className={`mt-1 text-sm sm:text-base font-semibold ${
-                    isDarkMode ? "text-white" : "text-gray-900"
-                  }`}
-                >
-                  {metric.value}
-                </p>
-              </div>
-            ))}
-          </div>
+        {/* Moving light effects */}
+        <div className="absolute inset-0 light-rays">
+          <div className="light-ray ray1"></div>
+          <div className="light-ray ray2"></div>
+          <div className="light-ray ray3"></div>
         </div>
-
+      </div>
+      {/* Main content */}
+      <div className="container mx-auto px-4 py-28 md:py-32 relative z-10">
         <div
-          className={`rounded-2xl border p-6 sm:p-8 lg:p-10 ${
-            isDarkMode
-              ? "bg-gradient-to-br from-green-950/40 to-gray-950 border-green-900/50"
-              : "bg-gradient-to-br from-green-50 to-white border-green-200/70"
-          }`}
+          className="flex flex-col md:flex-row items-center justify-between
+        gap-12 md:gap-16"
         >
-          <p
-            className={`text-xs sm:text-sm font-semibold uppercase tracking-[0.14em] ${
-              isDarkMode ? "text-green-400" : "text-green-700"
-            }`}
+          {/* Left side content - Text and graphics */}
+          <div
+            className="w-full md:w-1/2 flex flex-col items-center
+          md:items-start text-center md:text-left"
           >
-            Why {TOKEN_SYMBOL}
-          </p>
+            {/* Header Content */}
+            <div
+              className="inline-block p-2 px-4 rounded-full bg-gradient-to-r
+            from-teal-400/0 to-indigo-500/10 mb-6"
+            >
+              <p
+                className="text-sm font-medium bg-clip-text text-transparent
+              bg-gradient-to-r from-fuchsia-500 to-purple-600 animate-gradient-x"
+              >
+                Presale Now Live.
+              </p>
+            </div>
 
-          <div className="mt-5 space-y-4">
-            {highlights.map((item) => {
-              const Icon = item.icon;
+            <h1
+              className={`text-4xl md:text-5xl lg:text-6xl font-bold ${textColor}
+            mb-4`}
+            >
+              <span
+                className="bg-clip-text text-transparent bg-gradient-to-r 
+              from-fuchsia-500 to-purple-600 animate-gradient-x"
+              >
+                {TOKEN_NAME}
+              </span>
+            </h1>
 
-              return (
-                <article
-                  key={item.title}
-                  className={`rounded-xl border p-4 ${
-                    isDarkMode
-                      ? "bg-gray-900/50 border-green-900/50"
-                      : "bg-white/80 border-green-200/70"
-                  }`}
-                >
-                  <div className="flex items-start gap-3">
-                    <div
-                      className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-                        isDarkMode
-                          ? "bg-green-900/40 text-green-300"
-                          : "bg-green-100 text-green-700"
-                      }`}
-                    >
-                      <Icon className="text-base" />
-                    </div>
-                    <div>
-                      <h3
-                        className={`text-sm sm:text-base font-semibold ${
-                          isDarkMode ? "text-white" : "text-gray-900"
-                        }`}
-                      >
-                        {item.title}
-                      </h3>
-                      <p
-                        className={`mt-1 text-sm leading-relaxed ${
-                          isDarkMode ? "text-gray-400" : "text-gray-600"
-                        }`}
-                      >
-                        {item.description}
-                      </p>
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
+            <h2 className="text-2xl md:text-3xl font-bold mb-6">
+              <span
+                className="bg-clip-text text-transparent bg-gradient-to-r 
+              from-fuchisa-500 to-purple-600 animate-gradient-x"
+              >
+                Token
+              </span>
+              <span
+                className="bg-clip-text text-transparent bg-gradient-to-r
+              from-indigo-500 to-purple-600"
+              >
+                {" "}
+              </span>
+              <span className={textColor}>Stage 1</span>
+            </h2>
+            <p
+              className={`${secondaryTextColor} text-base md:text-lg max-w-md
+            mb-8 leading-relaxed`}
+            >
+              Revolutionizing agriculture through decentralized innovation. Join
+              the future of blockchain technology today.
+            </p>
+
+            {/* Feature highlights */}
+            <div className="flex flex-wrap gap-4 mb-8">
+              <div
+                className={`px-4 py-2 rounded-full ${
+                  isDarkMode ? "bg-teal-500/10" : "bg-teal-100"
+                } ${
+                  isDarkMode ? "text-fuchsia-500" : "text-teal-700"
+                } text-sm font-medium flex items-center`}
+              >
+                Limited Presale
+              </div>
+              <div
+                className={`px-4 py-2 rounded-full ${
+                  isDarkMode ? "bg-indigo-500/10" : "bg-indigo-100"
+                } ${
+                  isDarkMode ? "text-indigo-300" : "text-indigo-700"
+                } text-sm font-medium flex items-center`}
+              >
+                Exclusive Benefits
+              </div>
+            </div>
+
+            {/* Background decorative elements */}
           </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 };
-
-export default HeroSection;
