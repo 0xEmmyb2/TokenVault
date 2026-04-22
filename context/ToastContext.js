@@ -133,48 +133,48 @@ export const ToastProvider = ({ children }) => {
     },
   };
 
-  return;
-  <ToastContext.Provider
-    value={{
-      showProcessing,
-      showApprove,
-      showComplete,
-      showReject,
-      showFailed,
-      showInfo,
-      updateToast,
-      notify,
-      toast,
-    }}
-  >
-    <Toaster
-      position="top-center"
-      toastOptions={{
-        success: {
-          iconTheme: {
-            primary: "#00ff5e",
-            secondary: "white",
-          },
-        },
-        error: {
-            iconTheme: {
-                primary: "#d11919",
-                secondary: "white"
-            }
-        }
+  return (
+    <ToastContext.Provider
+      value={{
+        showProcessing,
+        showApprove,
+        showComplete,
+        showReject,
+        showFailed,
+        showInfo,
+        updateToast,
+        notify,
+        toast,
       }}
-    />
-    {children}
-  </ToastContext.Provider>;
+    >
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          success: {
+            iconTheme: {
+              primary: "#00ff5e",
+              secondary: "white",
+            },
+          },
+          error: {
+            iconTheme: {
+              primary: "#d11919",
+              secondary: "white",
+            },
+          },
+        }}
+      />
+      {children}
+    </ToastContext.Provider>
+  );
 };
 
-
 export const useToast = () => {
-    const context = useContext(ToastContext);
+  const context = useContext(ToastContext);
 
-    if (context === undefined) {
-        throw new Error("useToast must be within a ToastProvider");
-    }
+  if (context === undefined) {
+    throw new Error("useToast must be within a ToastProvider");
+  }
 
-    return context;
-}
+  return context;
+};

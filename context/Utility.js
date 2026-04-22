@@ -47,7 +47,7 @@ export const handleTransactionError = (
     }
   }
 
-  return { message, errorMessage, code: errorCode };
+  return { message: errorMessage, code: errorCode };
 };
 
 export const ERC20_ABI = [
