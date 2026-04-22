@@ -12,6 +12,7 @@
 
 # production
 /build
+debug.log
 
 # misc
 .DB_STORE
