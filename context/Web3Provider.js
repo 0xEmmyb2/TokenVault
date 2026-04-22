@@ -59,7 +59,7 @@ export const Web3Provider = ({ children }) => {
     tbcBalance: "0",
   });
 
-  const [error, setError] = useState(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const initContract = () => {
@@ -98,13 +98,18 @@ export const Web3Provider = ({ children }) => {
 
         setContractInfo({
           tbcAddress: info.tokenAddress,
-          tbcBalance: ethers.formatUnits(
-            info.tokenBalance,
-            tokenDecimals,
-          ),
+          tbcBalance: ethers.formatUnits(info.tokenBalance, tokenDecimals),
           ethPrice: ethers.formatUnits(info.ethPrice, 18),
           totalSold: ethers.formatUnits(info.totalSold, tokenDecimals),
         });
+
+        // Check if user is admin
+        if (address) {
+          const owner = await readOnlyContract.i_owner();
+          setIsAdmin(owner.toLowerCase() === address.toLowerCase());
+        } else {
+          setIsAdmin(false);
+        }
 
         if (address && info.tokenAddress) {
           const tokenContract = new ethers.Contract(
@@ -127,18 +132,12 @@ export const Web3Provider = ({ children }) => {
 
           setTokenBalance({
             ...prev,
-            userTbcBalance: ethers.formatUnits(
-              userTokenBalance,
-              tokenDecimals,
-            ),
+            userTbcBalance: ethers.formatUnits(userTokenBalance, tokenDecimals),
             contractEthBalance: ethers.formatUnits(contractEthBalance),
             totalSupply: ethers.formatUnits(totalSupply, tokenDecimals),
             userEthBalance: ethers.formatUnits(userEthBalance),
             ethPrice: ethers.formatUnits(info.ethPrice, 18),
-            tbcBalance: ethers.formatUnits(
-              info.tokenBalance,
-              tokenDecimals,
-            ),
+            tbcBalance: ethers.formatUnits(info.tokenBalance, tokenDecimals),
           });
         }
 
@@ -461,9 +460,11 @@ export const Web3Provider = ({ children }) => {
     updateTokenPrice,
     setSaleToken,
     withdrawAllTokens,
+    rescueTokens,
     formatAddress,
     formatTokenAmount,
     isOwner,
+    isAdmin,
     setReCall,
     addTokenToMetaMask,
   };
@@ -472,13 +473,13 @@ export const Web3Provider = ({ children }) => {
 };
 
 export const useWeb3 = () => {
-    const context = useContext(Web3Context);
+  const context = useContext(Web3Context);
 
-    if (!context) {
-        throw new Error("useWeb3 must be used within a Web3Provider");
-    }
+  if (!context) {
+    throw new Error("useWeb3 must be used within a Web3Provider");
+  }
 
-    return context;
-}
+  return context;
+};
 
 export default Web3Context;
