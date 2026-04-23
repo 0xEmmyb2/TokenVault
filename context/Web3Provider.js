@@ -51,7 +51,7 @@ export const Web3Provider = ({ children }) => {
     totalSold: "0",
   });
 
-  const [tokenBalance, setTokenBalance] = useState({
+  const [tokenBalances, setTokenBalances] = useState({
     userTbcBalance: "0",
     contractEthBalance: null,
     totalSupply: null,
@@ -137,7 +137,7 @@ export const Web3Provider = ({ children }) => {
           ]);
 
           // BUG FIX 4: prev must be passed as a function parameter
-          setTokenBalance((prev) => ({
+          setTokenBalances((prev) => ({
             ...prev,
             userTbcBalance: ethers.formatUnits(userTokenBalance, tokenDecimals),
             contractEthBalance: ethers.formatUnits(contractEthBalance),
@@ -423,7 +423,7 @@ export const Web3Provider = ({ children }) => {
     isConnected: !!address && !!contract,
     isConnecting,
     contractInfo,
-    tokenBalance,
+    tokenBalances, 
     error,
     reCall,
     globalLoad,
