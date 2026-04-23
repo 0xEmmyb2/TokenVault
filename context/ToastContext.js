@@ -93,6 +93,7 @@ export const ToastProvider = ({ children }) => {
   };
 
   const updateToast = (id, state, message) => {
+    if (!id) return; //Check for the id Availability
     toast.dismiss(id);
 
     switch (state) {

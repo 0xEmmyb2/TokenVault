@@ -15,6 +15,7 @@ const CustomConnectButton = ({ active, childStyle }) => {
         const ready = mounted;
         const connected = ready && account && chain;
 
+        // Return the UI directly here
         return (
           <div
             {...(!ready && {
@@ -26,75 +27,55 @@ const CustomConnectButton = ({ active, childStyle }) => {
               },
             })}
           >
-            {() => {
-              if (!connected) {
-                return (
-                  <button
-                    onClick={openConnectModal}
-                    className={`flex items-center 
-                    bg-gradient-to-r from-fuchsia-500
-                    to-purple-600 hover:from-fuchsia-600
-                    hover:to-purple-700 text-white px-4 
-                    py-2 rounded-md transition-colors ${childStyle}`}
-                  >
-                    <RiWallet3Line className="mr-2" size={20} />
-                    Connect Wallet
-                  </button>
-                );
-              }
-
-              if (chain.unsupported) {
-                return (
+            {/* REMOVED: {() => { ... }} wrapper. Just use logic directly. */}
+            {!connected ? (
+              <button
+                onClick={openConnectModal}
+                type="button"
+                className={`flex items-center bg-gradient-to-r from-fuchsia-500 to-purple-600 hover:from-fuchsia-600 hover:to-purple-700 text-white px-4 py-2 rounded-md transition-colors ${childStyle}`}
+              >
+                <RiWallet3Line className="mr-2" size={20} />
+                Connect Wallet
+              </button>
+            ) : chain.unsupported ? (
+              <button
+                onClick={openChainModal}
+                type="button"
+                className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg"
+              >
+                Wrong Network
+              </button>
+            ) : (
+              <div className="flex items-center gap-4">
+                {active && (
                   <button
                     onClick={openChainModal}
-                    className="bg-red-500 hover:bg-red-600
-                  text-white px-6 py-2 rounded-lg"
+                    type="button"
+                    className="bg-gradient-to-r from-fuchsia-500 to-purple-600 hover:from-fuchsia-600 hover:to-purple-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
                   >
-                    Wrong Network
+                    {chain.hasIcon && (
+                      <div className="w-5 h-5">
+                        {chain.iconUrl && (
+                          <img
+                            alt={chain.name ?? "Chain icon"}
+                            src={chain.iconUrl}
+                            className="w-5 h-5"
+                          />
+                        )}
+                      </div>
+                    )}
                   </button>
-                );
-              }
-              return (
-                <div className="flex items-center gap-4">
-                  {active && (
-                    <button
-                      onClick={openChainModal}
-                      className="bg-gradient-to-r
-                    from-fuchsia-500 to-purple-600
-                    hover:from-fuchsia-600
-                    hover:to-purple-700 text-white px-4
-                    py-2 rounded-lg flex items-center
-                    gap-2"
-                    >
-                      {chain.hasIcon && (
-                        <div className="w-5 h-5">
-                          {chain.iconUrl && (
-                            <img
-                              alt={chain.name ?? "Chain icon"}
-                              src={chain.iconUrl}
-                              className="w-5 h-5"
-                            />
-                          )}
-                        </div>
-                      )}
-                      {/* {chain.name} */}
-                    </button>
-                  )}
-                  <button
-                    onClick={openAccountModal}
-                    className="bg-gradient-to-r
-                  from-fuchsia-500 to-purple-600
-                  hover:from-fuchsia-600
-                  hover:to-purple-700 text-white px-4
-                  py-2 rounded-lg flex items-center
-                  gap-2"
-                  >
-                    {account.displayName}
-                    {account.displayBalance && ` (${account.displayBalance})`}
-                  </button>
-                </div>
-              );
-            }}
+                )}
+                <button
+                  onClick={openAccountModal}
+                  type="button"
+                  className="bg-gradient-to-r from-fuchsia-500 to-purple-600 hover:from-fuchsia-600 hover:to-purple-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                >
+                  {account.displayName}
+                  {account.displayBalance && ` (${account.displayBalance})`}
+                </button>
+              </div>
+            )}
           </div>
         );
       }}
