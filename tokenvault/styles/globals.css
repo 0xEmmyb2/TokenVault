@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+/* 1. Standard RainbowKit Styles */
+@import "@rainbow-me/rainbowkit/styles.css";
+
+@theme {
+  /* 2. Custom dApp Brand Colors */
+  /* These will be available as bg-brand, text-accent, etc. */
+  --color-brand: #45ef56;
+  --color-accent: #6366f1;
+  --color-background-dark: #050505;
+  --color-card-dark: #111111;
+
+  /* Smooth out border radius to match RainbowKit 'small' */
+  --radius-dapp: 0.5rem;
+}
+
+/* 3. Base Layer: Setting the dApp Vibe */
+@layer base {
+  :root {
+    color-scheme: dark; /* Tells the browser this is a dark dApp */
+  }
+
+  body {
+    @apply bg-background-dark text-white antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "inter-character";
+  }
+
+  /* Custom Scrollbar for a "Pro" Web3 feel */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-white/10 rounded-full hover:bg-white/20 transition-colors;
+  }
+}
+
+/* 4. Utility Layer: Common dApp Patterns */
+@layer utilities {
+  .glass-card {
+    @apply bg-[#111111]/80 backdrop-blur-xl border border-white/5 rounded-[32px];
+  }
+
+  .inner-card {
+    @apply bg-[#0d0d0d] border border-white/5 rounded-2xl p-6;
+  }
+}
