@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import "../styles/globals.css"; // Path to your new dApp CSS
+import "../styles/globals.css";
 import { Providers } from "@/provider/Provider";
 
 export const metadata: Metadata = {
@@ -13,11 +13,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className="antialiased">
-        <Providers>
-          {children}
-        </Providers>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
